@@ -1,0 +1,587 @@
+{
+  "name": "ICN292-Lab3-Munoz-Cristobal-triage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "triage",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4534f3a2-43fa-4fad-aa45-b2c391c21056",
+      "name": "Webhook",
+      "webhookId": "23681a50-100b-4172-9515-eca52c3fee44"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.id_solicitud }} ",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "0c66396c-a87d-43c5-b729-9341278a6480"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "INVALIDO_CAMPO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "444adedd-8cfa-4e1e-bbee-1af5ec0440a4",
+                    "leftValue": "={{ $json.body.monto.toNumber() }} ",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "lt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "INVALIDO_MONTO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a59f0600-843d-4507-94ed-9262613e8bbe",
+                    "leftValue": "={{ $json.body.dias_desde_compra.toNumber() }}",
+                    "rightValue": 28,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RECHAZO_PLAZO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "eb753bde-c95f-4d02-a361-b9c286f0f081",
+                    "leftValue": "={{ $json.body.estado_producto }}",
+                    "rightValue": "danado_por_uso",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RECHAZO_ESTADO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9b7e9c35-2271-4ff8-9b88-9d480f6f6e09",
+                    "leftValue": "={{ $json.body.monto.toNumber() }}",
+                    "rightValue": 65000,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REVISION_MONTO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ffd64e6e-84a1-447d-8810-d96065eed590",
+                    "leftValue": "={{ $json.body.estado_producto }}",
+                    "rightValue": "con_fallas",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REVISION_FALLA"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ea19a36a-c286-4734-ab63-f075ecbc9855",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1a3d77a-7e87-4c33-aa13-bcd7c8ad2a1d",
+              "name": "ruta",
+              "value": "DATOS_INVALIDOS",
+              "type": "string"
+            },
+            {
+              "id": "abc15d44-69ef-4fb3-909e-35d29a422a7c",
+              "name": "motivo",
+              "value": "Falta ID o monto menor a cero",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        704,
+        -160
+      ],
+      "id": "e96e930e-32c2-4fd7-ab98-0a82bb485fd6",
+      "name": "Set_Datos_Invalidos"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "09511b3a-3cab-4119-85cc-19e8acfc3e8a",
+              "name": "ruta",
+              "value": "RECHAZO",
+              "type": "string"
+            },
+            {
+              "id": "d7a35592-a157-4a80-8968-9d2b4f744473",
+              "name": "motivo",
+              "value": "Plazo excedido (> 28 dias) o danado por uso",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        704,
+        0
+      ],
+      "id": "28f7d152-9e8a-48b1-825c-df8c7a00c0a1",
+      "name": "Set_Rechazo"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b470008c-841e-4bf7-baa9-37d2d66a3023",
+              "name": "ruta",
+              "value": "REVISION",
+              "type": "string"
+            },
+            {
+              "id": "67b2d8f4-d2a5-4e0e-986b-a906c6693f06",
+              "name": "motivo",
+              "value": "Monto excede umbral (> 65000) o con fallas",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        704,
+        160
+      ],
+      "id": "7a757124-7130-434c-9848-3ddef4a40c73",
+      "name": "Set_Revision"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f896777-2c3d-4afc-bcde-be26af642c18",
+              "name": "ruta",
+              "value": "APROBACION",
+              "type": "string"
+            },
+            {
+              "id": "60369236-b606-4cda-87bd-3c43860e1f47",
+              "name": "motivo",
+              "value": "Cumple condiciones para aprobacion directa",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        704,
+        320
+      ],
+      "id": "374b3b9e-d12e-426d-a2d0-e2c5e27b9beb",
+      "name": "Set_Aprobacion"
+    },
+    {
+      "parameters": {
+        "url": "https://mindicador.cl/api/uf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        992,
+        80
+      ],
+      "id": "bf33a4f8-3a85-4e17-8c89-d68b80b330f7",
+      "name": "Obtener_UF",
+      "retryOnFail": true,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a55b6555-7cb7-45c1-892f-a5f1fdde5229",
+              "name": "mensaje",
+              "value": "=Estimado cliente, su solicitud {{ $('Webhook').item.json.body.id_solicitud }} fue procesada.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1216,
+        80
+      ],
+      "id": "f5548ecf-e734-46d1-9563-6415a9ab39e2",
+      "name": "Notificar_Cliente"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ed896387-346e-41a8-8a5e-f557078ba3e1",
+              "name": "id_solicitud",
+              "value": "={{ $('Webhook').item.json.body.id_solicitud }}",
+              "type": "string"
+            },
+            {
+              "id": "8151610f-1a82-4d66-b5a8-b9b64a616659",
+              "name": "sku",
+              "value": "={{ $('Webhook').item.json.body.sku }}",
+              "type": "string"
+            },
+            {
+              "id": "9b3ccaad-4f74-4293-adfc-d4a9b27fb267",
+              "name": "monto",
+              "value": "={{ $('Webhook').item.json.body.monto }}",
+              "type": "string"
+            },
+            {
+              "id": "d4afc179-53ec-4177-bbef-eb546bdc7bd0",
+              "name": "ruta",
+              "value": "={{ $('Set_Aprobacion').isExecuted ? $('Set_Aprobacion').item.json.ruta : ($('Set_Rechazo').isExecuted ? $('Set_Rechazo').item.json.ruta : ($('Set_Revision').isExecuted ? $('Set_Revision').item.json.ruta : $('Set_Datos_Invalidos').item.json.ruta)) }}",
+              "type": "string"
+            },
+            {
+              "id": "0ece2daa-1af8-4a59-954c-a37c895d5807",
+              "name": "motivo",
+              "value": "={{ $('Set_Aprobacion').isExecuted ? $('Set_Aprobacion').item.json.motivo : ($('Set_Rechazo').isExecuted ? $('Set_Rechazo').item.json.motivo : ($('Set_Revision').isExecuted ? $('Set_Revision').item.json.motivo : $('Set_Datos_Invalidos').item.json.motivo)) }}",
+              "type": "string"
+            },
+            {
+              "id": "e3125c1b-410d-489d-9834-cf47fce41093",
+              "name": "umbral_U",
+              "value": "65000",
+              "type": "string"
+            },
+            {
+              "id": "aed665a8-16e0-42fc-bc47-ec68a99a2aba",
+              "name": "plazo_D",
+              "value": "28",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1440,
+        80
+      ],
+      "id": "03f010a8-af01-4708-aa53-de2e8d8d38a8",
+      "name": "Registro_Trazabilidad"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1664,
+        80
+      ],
+      "id": "7602e7bd-9590-4298-ab0e-b130b00a99c6",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "body": {
+            "id_solicitud": "DEV-1122",
+            "sku": "PL-120",
+            "unidades": "1",
+            "monto": "45990",
+            "dias_desde_compra": "2",
+            "estado_producto": "sin_abrir",
+            "email_cliente": "cliente8@example.cl"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Set_Datos_Invalidos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Datos_Invalidos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Revision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Revision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Aprobacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_Datos_Invalidos": {
+      "main": [
+        [
+          {
+            "node": "Obtener_UF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_Rechazo": {
+      "main": [
+        [
+          {
+            "node": "Obtener_UF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_Revision": {
+      "main": [
+        [
+          {
+            "node": "Obtener_UF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_Aprobacion": {
+      "main": [
+        [
+          {
+            "node": "Obtener_UF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener_UF": {
+      "main": [
+        [
+          {
+            "node": "Notificar_Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar_Cliente": {
+      "main": [
+        [
+          {
+            "node": "Registro_Trazabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registro_Trazabilidad": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "03c96707-508f-4390-9548-ecacc4493ce8",
+  "meta": {
+    "instanceId": "605e64e38156b982eb8c10bc9200ee6895394e5a69f49419e03aa22f97a22124"
+  },
+  "nodeGroups": [],
+  "id": "KxC3IykLq9ZfGJTv",
+  "tags": []
+}
