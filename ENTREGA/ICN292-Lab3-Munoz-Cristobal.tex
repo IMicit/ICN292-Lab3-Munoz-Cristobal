@@ -1,0 +1,291 @@
+\PassOptionsToPackage{table}{xcolor}
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\usepackage{lastpage}
+\usepackage{float}
+
+\definecolor{usmblue}{RGB}{0,51,102}
+\definecolor{usmgray}{RGB}{90,90,90}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.8pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{usmblue}\leaders\hrule height \headrulewidth\hfill}}
+
+\fancyhead[L]{\small\color{usmblue}\textbf{Universidad Técnica Federico Santa María}\\[-2pt]
+  \footnotesize ICN 292 Sistemas de Información para la Gestión}
+\fancyhead[R]{\small\color{usmblue}\textbf{Departamento de Industrias}\\[-2pt]
+  \footnotesize Segundo Semestre 2026}
+\fancyfoot[C]{\footnotesize Página \thepage\ de \pageref{LastPage}}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{usmblue}}
+  {\thesection.}{0.5em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{usmblue}}
+  {\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\color{usmblue}}
+  {\thesubsubsection}{0.5em}{}
+
+\newtcolorbox{semilla}[1][]{
+  colback=usmblue!8, colframe=usmblue, coltitle=white,
+  colbacktitle=usmblue, fonttitle=\bfseries,
+  boxrule=0.6pt, arc=1pt, left=6pt, right=6pt, top=4pt, bottom=4pt,
+  title={Semilla personal}, #1
+}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+\vspace*{0.8cm}
+
+{\large\bfseries UNIVERSIDAD TÉCNICA\\FEDERICO SANTA MARÍA}\\[4pt]
+{\color{usmblue}\rule{0.5\textwidth}{0.8pt}}\\[4pt]
+{\bfseries Departamento de Industrias}\\[4pt]
+{\color{usmblue}\rule{0.5\textwidth}{0.8pt}}
+
+\vspace{2cm}
+
+{\small\bfseries INFORME DE LABORATORIO}\\[8pt]
+{\Huge\bfseries\color{usmblue} Laboratorio 3}\\[6pt]
+{\Large Automatización de Procesos con n8n: Triaje de Devoluciones}\\[10pt]
+{\large ICN 292 Sistemas de Información para la Gestión}\\
+{\large Segundo Semestre 2026}
+
+\vspace{1.8cm}
+{\color{usmblue}\rule{0.35\textwidth}{0.5pt}}\\[8pt]
+\textbf{Estudiante:} Cristóbal Muñoz \\
+\textbf{RUT:} 21.657.535-0 \\
+\textbf{Valor de $S$:} 535 \\
+\vspace{0.3cm}
+\textbf{Repositorio GitHub:} \\
+\url{https://github.com/IMicit/ICN292-Lab3-Munoz-Cristobal}
+
+\vspace{1.5cm}
+\textit{Profesores:} José Miguel González Paul \textperiodcentered\ José Luis Sáez Tamayo
+
+\vfill
+Campus Vitacura\\
+Septiembre de 2026
+\end{center}
+\end{titlepage}
+
+\section*{Resumen Ejecutivo}
+\addcontentsline{toc}{section}{Resumen Ejecutivo}
+
+En este informe presento cómo armé un sistema automático usando n8n para ordenar las solicitudes de devolución de Andes Hogar SpA. A partir de mi RUT saqué mi semilla $S = 535$. Con eso, el monto de corte para mandar casos a revisión manual quedó en \$65.000 y el plazo máximo para aceptar productos quedó en 28 días corridos.
+
+El trabajo tiene tres partes: primero, un flujo emisor que crea y manda 15 casos de prueba. Segundo, un flujo de triaje que recibe la información, la filtra siguiendo las reglas del caso, saca el valor de la UF usando una API y decide qué hacer con cada solicitud. Y tercero, un flujo que corre solo en la noche para hacer un reporte diario, al cual le agregué un arreglo matemático para que no se caiga si le toca dividir por cero. Al final, probé meterle datos con errores y números justo en el límite para comprobar que el sistema no se congela y clasifica todo bien.
+
+\newpage
+
+\section{Parámetros y Semilla Personal}
+
+Usando mi RUT y la fórmula de la guía, llegué a la semilla $S = 535$. Con esto calculé los parámetros que usé para armar las reglas del flujo:
+
+\begin{semilla}
+RUT: 21.657.535-0 $\implies S = 535$.
+\end{semilla}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=3pt]
+    \item \textbf{Umbral gerencial ($U$):} Es el monto tope. Si la compra lo supera, se va a revisión manual:
+    \begin{equation}
+    U = \$50.000 + \$1.000 \cdot (535 \pmod{40}) = \$50.000 + \$1.000 \cdot 15 = \mathbf{\$65.000}
+    \end{equation}
+    \item \textbf{Plazo límite ($D$):} Fijado por el caso en $\mathbf{28 \text{ días}}$ corridos. Si la solicitud se pasa de ese tiempo, se rechaza de inmediato.
+    \item \textbf{Canal de conexión:} El flujo de triaje recibe los datos a través de peticiones HTTP POST en formato JSON usando un nodo Webhook.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\arrayrulecolor{usmblue}
+{\rowcolors{2}{usmblue!8}{usmblue!8}
+\begin{tabular}{|p{3.5cm} p{8.5cm} l|}
+\hline
+\rowcolor{usmblue}
+\textcolor{white}{\textbf{Parámetro}} & \textcolor{white}{\textbf{Regla usada en n8n}} & \textcolor{white}{\textbf{Valor}} \\
+Umbral $U$ & Si el monto es mayor a $U$, se desvía a revisión & \$65.000 \\
+Plazo $D$ & Si pasaron más de $D$ días, se rechaza la solicitud & 28 días \\
+Semilla $S$ & Número base calculado con mi RUT & 535 \\
+Protocolo & Forma en que el emisor le manda los datos al triaje & POST / JSON \\
+\hline
+\end{tabular}}
+\caption{Parámetros calculados para el laboratorio}
+\label{tab:parametros}
+\end{table}
+
+\section{Parte A: Implementación del Triaje y Emisor}
+
+\subsection{Flujo principal de Triaje}
+
+Este flujo parte con un Webhook que se queda escuchando para recibir datos. A ese nodo le conecté un Switch que funciona como un gran filtro, revisando la información en orden y mandándola por estas salidas:
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{DATOS\_INVALIDOS:} Descarta si falta el ID de la solicitud o si el monto viene en cero o negativo.
+    \item \textbf{RECHAZO\_PLAZO:} Revisa si los días desde la compra son mayores a 28.
+    \item \textbf{RECHAZO\_ESTADO:} Filtra si el producto viene marcado como dañado por el cliente.
+    \item \textbf{REVISION\_MONTO:} Separa las compras que pasan el límite de los \$65.000.
+    \item \textbf{APROBACION:} Si la solicitud no tuvo problemas con ningún filtro anterior, cae acá por descarte.
+\end{enumerate}
+
+Para los casos que se aprueban o quedan en revisión, puse un nodo HTTP Request que consulta a la API de \texttt{mindicador.cl} para indexar el valor de la UF. Al final, el flujo guarda el registro y devuelve un aviso de éxito al emisor con un código HTTP 200.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{ICN292-Lab3-Munoz-Cristobal-triage.png}
+    \caption{Flujo de Triaje en n8n con el nodo Switch y la conexión a la API}
+    \label{fig:triage_canvas}
+\end{figure}
+
+\subsection{Flujo Emisor}
+
+Para poder hacer las pruebas armé un segundo flujo más simple. Agregué un nodo de código en JavaScript y le pegué la lista con los 15 registros que venían en la guía (que traen distintos montos, días y estados). Después, un nodo HTTP Request los agarra y los envía de a uno al Webhook del triaje.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor.png}
+    \caption{Tabla que muestra cómo el Triaje clasificó los 15 casos que mandó el Emisor}
+    \label{fig:emisor_results}
+\end{figure}
+
+\section{Parte B: Consolidación y Reporte Diario}
+
+El tercer flujo lo hice para sacar un reporte al final del día. Empieza con un nodo Schedule Trigger para que corra solo a cierta hora. El flujo lee todas las solicitudes del día y corre un script que suma las platas y cuenta cuántos casos se fueron por cada ruta.
+
+Para sacar el porcentaje de aprobación sin que haya errores, le puse una condición matemática en el código (usando un operador ternario). Básicamente, si en un día no entra ninguna solicitud ($total = 0$), el cálculo devuelve 0\% automáticamente. Con esto me aseguro de que el programa no tire error por intentar dividir por cero.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.72\textwidth]{ICN292-Lab3-Munoz-Cristobal-schedule.png}
+    \caption{Flujo programado para armar el reporte diario automáticamente}
+    \label{fig:schedule_canvas}
+\end{figure}
+
+\section{Parte C: Manejo de Errores y Pruebas de Borde}
+
+\subsection{Pruebas con datos malos}
+
+Para ver si el sistema aguantaba bien, le mandé tres casos con datos malos a propósito:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\arrayrulecolor{usmblue}
+{\rowcolors{2}{usmblue!8}{usmblue!8}
+
+\begin{tabular}{|p{2.6cm} p{4.3cm} p{4.1cm} p{3.8cm}|}
+\hline
+\rowcolor{usmblue}
+\textcolor{white}{\textbf{Caso}} & \textcolor{white}{\textbf{Dato ingresado}} & \textcolor{white}{\textbf{Lo que debió pasar}} & \textcolor{white}{\textbf{Lo que pasó}} \\
+\textbf{Entrada 1}\newline(Fallo servidor) & Monto negativo ($-5000$) y el nodo no estaba preparado & Desviarse por las reglas del negocio & El flujo remoto se cayó y tiró un error HTTP 500. \\
+\textbf{Entrada 2}\newline(Monto en cero) & Monto igual a 0 (\texttt{DEV-ERR-02}) & Irse a datos inválidos & Todo bien (HTTP 200), se fue a \texttt{DATOS\_INVALIDOS}. \\
+\textbf{Entrada 3}\newline(Monto negativo) & Monto igual a -1 (\texttt{DEV-ERR-03}) & Irse a datos inválidos & Todo bien (HTTP 200), se fue a \texttt{DATOS\_INVALIDOS}. \\
+\hline
+
+
+\end{tabular}}
+\caption{Resultados al enviar datos problemáticos al sistema}
+\label{tab:entradas_invalidas}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor_Entrada Inválida 1 (Caso con fallo de nodo).png}
+    \caption{Entrada 1: Error HTTP 500 porque el flujo remoto no supo qué hacer con el dato}
+    \label{fig:err1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor_Entrada Inválida 2.png}
+    \caption{Entrada 2: El sistema filtró bien la solicitud que traía monto cero}
+    \label{fig:err2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor_Entrada Inválida 3.png}
+    \caption{Entrada 3: El sistema capturó correctamente el monto negativo}
+    \label{fig:err3}
+\end{figure}
+
+\subsection{Uso de On Error en n8n}
+
+Cuando uno configura los nodos en n8n, hay una pestaña llamada \textit{Settings} donde se le dice al programa qué hacer si hay un error:
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Stop Workflow:} Es la opción por defecto. Si ocurre un error, el flujo se detiene de inmediato y el nodo queda marcado en rojo.
+    \item \textbf{Continue Regular Output:} El flujo no se para, sino que le manda el detalle del error al siguiente nodo como si fuera un dato más.
+    \item \textbf{Continue Error Output:} Abre una salida extra en el nodo (de color rojo) para mandar por ahí solo los casos que fallaron y procesarlos aparte.
+\end{itemize}
+
+En mi sistema le puse \textit{Continue Regular Output} al nodo que consulta la UF. Así, si la página de los indicadores económicos se cae, el flujo sigue funcionando igual y no detiene el proceso de las devoluciones. Por el contrario, en el nodo Switch dejé la opción \textit{Stop Workflow}, porque si llega a fallar una regla es mejor que pare todo antes de que clasifique mal los datos.
+
+\subsection{Para qué sirven los Error Workflows}
+
+Un Error Workflow es un flujo que funciona como un respaldo. Se activa solo (usando un nodo que se llama \textit{Error Trigger}) cuando cualquier otro flujo de la plataforma falla. 
+
+Esto sirve mucho en procesos como mi reporte diario. Como ese flujo funciona solo en la noche, si algo falla nadie se entera. Si no ponemos un Error Workflow, el error pasa colado. Pero si lo conectamos, el sistema te puede mandar un correo o un mensaje avisando al tiro que hubo un problema.
+
+\subsection{Pruebas justo en los límites}
+
+Hice dos pruebas mandando exactamente los números del límite para ver por qué rama los tiraba el Switch:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor_ParteC_Punto3_Limite_Monto_65000.png}
+    \caption{Prueba A: Solicitud enviada justo con \$65.000}
+    \label{fig:limite_a}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Límite A (\$65.000):} Mandé el caso \texttt{DEV-LIM-01} con exactamente \$65.000 y se fue directo a \texttt{APROBACION}. Esto pasó porque la regla dice que el monto tiene que ser estrictamente mayor a 65.000 ($>$) para irse a revisión. Como era igual, se aprueba.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor_ParteC_Punto3_Limite_Dias_28.png}
+    \caption{Prueba B: Solicitud enviada con exactamente 28 días desde la compra}
+    \label{fig:limite_b}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Límite B (28 días):} Mandé el caso \texttt{DEV-LIM-02} con 28 días justos. También se fue a \texttt{APROBACION} porque la regla rechaza solo los casos que tienen más de 28 días ($>$). El día 28 todavía está dentro del plazo.
+\end{itemize}
+
+\subsection{Error por tipo de dato}
+
+Para probar qué pasa cuando se fuerza un tipo de dato incorrecto, cambié en el Switch la regla del monto a formato de texto (String) y mandé la solicitud DEV-C01 con un monto de \$9.990.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{ICN292-Lab3-Munoz-Cristobal-emisor_ParteC_Punto4_Error_Tipo_DEV_C01.png}
+    \caption{Error HTTP 500 provocado en el Webhook al evaluar el monto como texto en el Switch}
+    \label{fig:error_tipo}
+\end{figure}
+
+¿Por qué pasó esto?: Al configurar la regla del Switch esperando una comparación numérica pero forzando el campo a tipo texto, el motor de n8n no pudo resolver la operación internamente. Esto provocó que el flujo remoto de triaje colapsara y respondiera con un error HTTP 500 (Error in workflow), demostrando que una mala definición en los tipos de datos bota la ejecución completa en lugar de clasificar la solicitud.
+
+\section{Conclusiones}
+
+Hacer este laboratorio me sirvió harto para ver en la práctica cómo automatizar cosas que siempre se hacen a mano. Con las pruebas me di cuenta de lo importante que es decirle bien al sistema si un dato es un número o un texto, porque si uno se equivoca en eso, el programa compara mal y clasifica todo al revés. También comprobé que es súper necesario configurar qué hacer si se cae una conexión externa (como consultar la UF), para que el proceso no se congele por completo y pueda seguir atendiendo las demás solicitudes sin problema.
+
+\end{document}
