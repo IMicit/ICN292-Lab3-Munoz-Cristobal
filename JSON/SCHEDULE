@@ -1,0 +1,123 @@
+{
+  "name": "ICN292-Lab3-Munoz-Cristobal-schedule",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "26faf83e-8cb8-43d6-9854-67c4aaaaeb30",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { id_solicitud: \"DEV-1115\", monto: 19990, ruta: \"APROBACION\" } },\n  { json: { id_solicitud: \"DEV-1116\", monto: 69980, ruta: \"REVISION\" } },\n  { json: { id_solicitud: \"DEV-1117\", monto: 24990, ruta: \"REVISION\" } },\n  { json: { id_solicitud: \"DEV-1118\", monto: 45000, ruta: \"RECHAZO\" } },\n  { json: { id_solicitud: \"DEV-1119\", monto: 15990, ruta: \"APROBACION\" } },\n  { json: { id_solicitud: \"DEV-1120\", monto: 85000, ruta: \"REVISION\" } },\n  { json: { id_solicitud: \"DEV-1121\", monto: 32000, ruta: \"RECHAZO\" } },\n  { json: { id_solicitud: \"DEV-1122\", monto: 12990, ruta: \"APROBACION\" } },\n  { json: { id_solicitud: \"DEV-1123\", monto: 0, ruta: \"DATOS_INVALIDOS\" } },\n  { json: { id_solicitud: \"DEV-1124\", monto: 54990, ruta: \"APROBACION\" } },\n  { json: { id_solicitud: \"DEV-1125\", monto: 99000, ruta: \"REVISION\" } },\n  { json: { id_solicitud: \"DEV-1126\", monto: 18000, ruta: \"RECHAZO\" } },\n  { json: { id_solicitud: \"DEV-1127\", monto: 22000, ruta: \"APROBACION\" } },\n  { json: { id_solicitud: \"DEV-1128\", monto: 35000, ruta: \"RECHAZO\" } },\n  { json: { id_solicitud: \"DEV-1129\", monto: 120000, ruta: \"DATOS_INVALIDOS\" } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "4d2bfcb6-a006-4afb-90cb-48f17ec04f3c",
+      "name": "Cargar_Datos_Dia"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "monto"
+            },
+            {
+              "field": "id_solicitud"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "ruta",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "0817ede4-255f-48f2-b571-55c96e794634",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet totalMonto = 0;\nlet totalSolicitudes = 0;\nlet totalAprobadas = 0;\nlet detalle = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const reg = items[i].json;\n  const cant = Number(reg.count_id_solicitud || reg.count || 0);\n  const monto = Number(reg.sum_monto || reg.sum || 0);\n  const ruta = reg.ruta || \"SIN_RUTA\";\n\n  totalSolicitudes += cant;\n  totalMonto += monto;\n\n  if (ruta === \"APROBACION\") {\n    totalAprobadas = cant;\n  }\n\n  detalle.push(ruta + \": \" + cant + \" solicitudes ($\" + monto + \")\");\n}\n\nlet tasa = 0;\nif (totalSolicitudes > 0) {\n  tasa = Number(((totalAprobadas / totalSolicitudes) * 100).toFixed(1));\n}\n\nconst mensaje = \"Total de \" + totalSolicitudes + \" solicitudes procesadas por un monto de $\" + totalMonto + \" (Tasa aprobacion directa: \" + tasa + \"%). Detalle por ruta: \" + detalle.join(\" | \");\n\nreturn [\n  {\n    json: {\n      reporte: mensaje,\n      total_solicitudes: totalSolicitudes,\n      monto_acumulado: totalMonto,\n      tasa_aprobacion: tasa\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "9596cd09-cfca-4d32-97e4-a100f3edb537",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Cargar_Datos_Dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar_Datos_Dia": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "34ff5137-934f-4959-82e0-890f5766adef",
+  "meta": {
+    "instanceId": "605e64e38156b982eb8c10bc9200ee6895394e5a69f49419e03aa22f97a22124"
+  },
+  "nodeGroups": [],
+  "id": "cYHnxM8HHXgLanVM",
+  "tags": []
+}
