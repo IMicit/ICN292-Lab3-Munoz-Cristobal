@@ -12,7 +12,7 @@
 
 * `ICN292-Lab3-Munoz-Cristobal-triage.json`: Workflow principal de clasificación y enrutamiento con reglas de negocio.
 * `ICN292-Lab3-Munoz-Cristobal-emisor.json`: Workflow disparador que genera y transmite las 15 solicitudes de devolución vía Webhook.
-* `ICN292-Lab3-Munoz-Cristobal-schedule.json`: Workflow analítico programado para consolidación de métricas diarias y prevención de división por cero.
+* `ICN292-Lab3-Munoz-Cristobal-resumen.json`: Workflow analítico programado para consolidación de métricas diarias y prevención de división por cero.
 
 ### Instrucciones de Ejecución (Reproducción en n8n)
 
