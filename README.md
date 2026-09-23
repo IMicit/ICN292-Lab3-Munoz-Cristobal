@@ -10,16 +10,16 @@
 
 ### Contenido del Repositorio
 
-*   `ICN292-Lab3-Munoz-Cristobal-triage.json`: Workflow principal de clasificación y enrutamiento con reglas de negocio.
-*   `ICN292-Lab3-Munoz-Cristobal-emisor.json`: Workflow disparador que genera y transmite las 15 solicitudes de devolución vía Webhook.
-*   `ICN292-Lab3-Munoz-Cristobal-schedule.json`: Workflow analítico programado para consolidación de métricas diarias y prevención de división por cero.
+* `ICN292-Lab3-Munoz-Cristobal-triage.json`: Workflow principal de clasificación y enrutamiento con reglas de negocio.
+* `ICN292-Lab3-Munoz-Cristobal-emisor.json`: Workflow disparador que genera y transmite las 15 solicitudes de devolución vía Webhook.
+* `ICN292-Lab3-Munoz-Cristobal-schedule.json`: Workflow analítico programado para consolidación de métricas diarias y prevención de división por cero.
 
-### Instrucciones de Uso
+### Instrucciones de Ejecución (Reproducción en n8n)
 
-Para reproducir estos flujos de trabajo, necesitas tener acceso a una instancia de [n8n](https://n8n.io/). Sigue estos pasos:
+Para abrir, visualizar y ejecutar estos flujos de trabajo, es necesario importar los archivos JSON dentro de una instancia de n8n siguiendo estos pasos:
 
-1.  Abre tu entorno de n8n.
-2.  Ve a la sección "Workflows" y haz clic en "Add workflow".
-3.  En el menú superior derecho (tres puntos), selecciona "Import from File" y carga uno de los archivos `.json` de este repositorio.
-4.  Repite el proceso para los otros archivos.
-5.  Asegúrate de activar (poner en "Active") el flujo `triage` antes de ejecutar el `emisor` para que el Webhook pueda recibir las peticiones.
+1. Ingresa a tu entorno de n8n (local o en la nube) y ve a la sección **Workflows**.
+2. Haz clic en el botón **Add workflow** para crear un lienzo en blanco.
+3. En la esquina superior derecha, abre el menú de opciones (tres puntos) y selecciona **Import from File**.
+4. Carga uno de los archivos `.json` descargados de este repositorio. Repite este proceso creando un nuevo workflow para cada archivo.
+5. **Nota operativa:** Para probar la integración, primero debes importar el flujo de **Triaje** y dejarlo activado (interruptor en *Active*) o ejecutando en modo de prueba (*Listen for test event*). Una vez activo, importa el flujo **Emisor** y presiona *Execute Workflow* para disparar el lote de 15 solicitudes hacia el Webhook del triaje.
